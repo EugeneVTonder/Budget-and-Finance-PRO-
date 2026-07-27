@@ -27,21 +27,35 @@
     --radius: 16px;
     --radius-sm: 10px;
     font-size: 16px;
+    --safe-top: env(safe-area-inset-top, 20px);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
   }
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   html,body { height:100%; margin:0; background:var(--bg); color:var(--text); font-family:'Sora',-apple-system,BlinkMacSystemFont,sans-serif; overscroll-behavior:none; -webkit-font-smoothing:antialiased; }
   .mono { font-family:'IBM Plex Mono',ui-monospace,monospace; font-variant-numeric:tabular-nums; }
   .hidden { display:none !important; }
 
-  #app { max-width:520px; margin:0 auto; min-height:100vh; display:flex; flex-direction:column; padding-bottom:96px; position:relative; }
+  #app { max-width:520px; margin:0 auto; min-height:100vh; display:flex; flex-direction:column; padding-bottom:96px; position:relative; padding-top:var(--safe-top); }
 
   /* ===== TOPBAR ===== */
-  #topbar { display:flex; align-items:center; justify-content:space-between; padding:calc(env(safe-area-inset-top,0px)+18px) 16px 8px; gap:8px; }
-  #topbar .nav-btn { background:none; border:none; color:var(--text-muted); font-size:22px; width:40px; height:40px; border-radius:50%; display:flex; align-items:center; justify-content:center; cursor:pointer; }
+  #topbar { 
+    display:flex; align-items:center; justify-content:space-between; 
+    padding: 12px 16px 8px; 
+    gap:8px;
+    min-height:52px;
+    position:relative;
+    z-index:10;
+  }
+  #topbar .nav-btn { 
+    background:none; border:none; color:var(--text-muted); font-size:22px; 
+    width:40px; height:40px; border-radius:50%; display:flex; align-items:center; justify-content:center; 
+    cursor:pointer;
+    flex-shrink:0;
+  }
   #topbar .nav-btn:active { background:var(--surface-2); }
-  #monthLabel { font-size:19px; font-weight:700; letter-spacing:-0.2px; }
-  #monthSub { font-size:12px; color:var(--text-muted); text-align:center; margin-top:-2px; }
-  #monthWrap { display:flex; flex-direction:column; align-items:center; flex:1; }
+  #monthLabel { font-size:18px; font-weight:700; letter-spacing:-0.2px; text-align:center; }
+  #monthSub { font-size:11px; color:var(--text-muted); text-align:center; margin-top:-2px; }
+  #monthWrap { display:flex; flex-direction:column; align-items:center; flex:1; min-width:0; }
 
   /* ===== MODE SELECTOR ===== */
   #modeSelector {
@@ -279,6 +293,18 @@
   }
   .chip.active { background:var(--accent); color:#08221B; border-color:var(--accent); }
 
+  /* ===== TOGGLE SWITCH ===== */
+  .toggle-row { display:flex; align-items:center; justify-content:space-between; padding:11px 0; border-bottom:1px solid var(--border); }
+  .toggle-row:last-child { border-bottom:none; }
+  .toggle-row .toggle-label { font-size:14px; }
+  .toggle-row .toggle-sub { font-size:11.5px; color:var(--text-muted); margin-top:2px; }
+  .switch { position:relative; width:44px; height:26px; background:var(--surface-3); border-radius:14px; border:none; flex-shrink:0; cursor:pointer; }
+  .switch::after { content:''; position:absolute; top:3px; left:3px; width:20px; height:20px; background:var(--text-muted); border-radius:50%; transition:0.15s; }
+  .switch.on { background:var(--accent-dim); }
+  .switch.on::after { transform:translateX(18px); background:var(--accent); }
+  .loc-btn { display:flex; align-items:center; gap:8px; width:100%; justify-content:center; background:var(--surface-2); border:1px dashed var(--border); color:var(--text-muted); padding:11px; border-radius:var(--radius-sm); font-size:13px; font-family:'Sora'; cursor:pointer; }
+  .loc-btn.got { border-style:solid; color:var(--accent); border-color:var(--accent-dim); }
+
   /* ===== PAYSLIP ===== */
   .ps-summary { background:var(--surface-2); border:1px solid var(--border); border-radius:var(--radius-sm); padding:4px 14px; margin:6px 0 14px; }
   .ps-summary-row { display:flex; justify-content:space-between; padding:9px 0; border-bottom:1px solid var(--border); font-size:13.5px; color:var(--text-muted); }
@@ -296,18 +322,24 @@
   .choice-title { display:block; font-size:14.5px; font-weight:700; color:var(--text); }
   .choice-sub { display:block; font-size:12px; color:var(--text-muted); margin-top:2px; }
 
-  /* ===== SETTINGS SHEET ===== */
-  #settingsSheet .field-group { margin-bottom:12px; }
-  #settingsSheet .save-btn { margin-top:0; }
-  .data-row { display:flex; gap:10px; margin-top:12px; }
-  .data-row .save-btn { flex:1; background:var(--surface-2); color:var(--text); }
-
   /* ===== ICON INPUT ROW ===== */
   .icon-input-row { display:flex; gap:10px; align-items:center; }
   .icon-preview { width:48px; height:48px; border-radius:14px; display:flex; align-items:center; justify-content:center; font-size:22px; flex-shrink:0; background:var(--surface-2); }
   .swatch-row { display:flex; flex-wrap:wrap; gap:10px; }
   .swatch { width:32px; height:32px; border-radius:50%; border:2px solid transparent; cursor:pointer; }
   .swatch.active { border-color:var(--text); }
+
+  /* ===== SETTINGS SHEET ===== */
+  #settingsSheet .field-group { margin-bottom:12px; }
+  #settingsSheet .save-btn { margin-top:0; }
+  .data-row { display:flex; gap:10px; margin-top:12px; }
+  .data-row .save-btn { flex:1; background:var(--surface-2); color:var(--text); }
+
+  /* ===== TFSA ENTRY SHEET ===== */
+  #tfsaEntrySheet .ps-summary { margin-top:0; }
+
+  /* ===== SAVINGS ACCOUNT SHEET ===== */
+  #savingsAccountSheet .field-group { margin-bottom:12px; }
 
   /* ===== SCROLLING ===== */
   ::-webkit-scrollbar { display:none; }
@@ -317,6 +349,10 @@
     #quickAdd .big-plus { width:100px; height:100px; font-size:44px; }
     .summary-card .value { font-size:17px; }
     .cat-card .cat-spent { font-size:14px; }
+    #topbar { padding: 8px 12px 4px; min-height:44px; }
+    #topbar .nav-btn { width:36px; height:36px; font-size:19px; }
+    #monthLabel { font-size:16px; }
+    #monthSub { font-size:10px; }
   }
 </style>
 </head>
@@ -435,12 +471,32 @@
       <label class="field-label">Payment method</label>
       <div class="chip-row" id="paymentChips"></div>
     </div>
+    <div id="customFieldsWrap"></div>
     <div class="field-group">
       <label class="field-label">Comment</label>
       <textarea class="text-input" id="txnComment" rows="2" placeholder="What was this for?"></textarea>
     </div>
+    <div class="field-group">
+      <button class="loc-btn" id="locBtn" onclick="captureLocation()">📍 Add location</button>
+    </div>
+    <div class="field-group" style="background:var(--surface-2); border-radius:var(--radius-sm); padding:4px 12px;">
+      <div class="toggle-row">
+        <div><div class="toggle-label">Repeat monthly</div><div class="toggle-sub">Reminds you to capture again next month</div></div>
+        <button class="switch" id="repeatToggle" onclick="toggleSwitch('repeatToggle')"></button>
+      </div>
+      <div class="toggle-row">
+        <div><div class="toggle-label">Exclude from reporting</div><div class="toggle-sub">Still saved, hidden from totals</div></div>
+        <button class="switch" id="excludeToggle" onclick="toggleSwitch('excludeToggle')"></button>
+      </div>
+    </div>
+    <div class="field-group" id="reminderWrap">
+      <label class="field-label">Remind me on (next month)</label>
+      <input type="date" class="text-input" id="reminderDate">
+    </div>
     <button class="save-btn" onclick="saveTransaction()">Save transaction</button>
     <button class="delete-link hidden" id="deleteTxnBtn" onclick="deleteTransaction()">Delete transaction</button>
+    <div class="section-label">Recent in this category</div>
+    <div id="txnHistory"></div>
   </div>
 
   <!-- ===== INCOME CHOOSER SHEET ===== -->
@@ -643,6 +699,79 @@
       <button class="save-btn" onclick="document.getElementById('importFile').click()">⬆ Import</button>
     </div>
     <input type="file" id="importFile" accept="application/json" class="hidden">
+  </div>
+
+  <!-- ===== TFSA ENTRY SHEET ===== -->
+  <div id="tfsaEntrySheet" class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-header">
+      <div class="sheet-title">📈 TFSA Entry</div>
+      <button class="sheet-close" onclick="closeTfsaEntrySheet()">✕</button>
+    </div>
+    <div class="field-group">
+      <label class="field-label">Date checked</label>
+      <input type="date" class="text-input" id="tfsaDate">
+    </div>
+    <div class="two-col">
+      <div class="field-group">
+        <label class="field-label">Current value</label>
+        <input type="number" inputmode="decimal" class="text-input mono" id="tfsaCurrentValue" placeholder="0.00">
+      </div>
+      <div class="field-group">
+        <label class="field-label">New capital added</label>
+        <input type="number" inputmode="decimal" class="text-input mono" id="tfsaCapitalAdded" placeholder="0.00">
+      </div>
+    </div>
+    <div class="field-group">
+      <label class="field-label">Comment</label>
+      <input class="text-input" id="tfsaComment" placeholder="Optional note">
+    </div>
+    <button class="save-btn" onclick="saveTfsaEntry()">Save entry</button>
+    <button class="delete-link hidden" id="deleteTfsaEntryBtn" onclick="deleteTfsaEntry()">Delete entry</button>
+  </div>
+
+  <!-- ===== SAVINGS ACCOUNT SHEET ===== -->
+  <div id="savingsAccountSheet" class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-header">
+      <div class="sheet-title" id="savingsAccountTitle">New savings account</div>
+      <button class="sheet-close" onclick="closeSavingsAccountSheet()">✕</button>
+    </div>
+    <div class="field-group">
+      <label class="field-label">Account name</label>
+      <input class="text-input" id="saAccountName" placeholder="e.g. Emergency Fund, Bank Savings">
+    </div>
+    <div class="field-group" style="background:var(--surface-2); border-radius:var(--radius-sm); padding:4px 12px;">
+      <div class="toggle-row">
+        <div><div class="toggle-label">Accessible in an emergency</div><div class="toggle-sub">Liquid / on-demand money vs locked away</div></div>
+        <button class="switch on" id="saTouchableToggle" onclick="toggleSwitch('saTouchableToggle')"></button>
+      </div>
+    </div>
+    <button class="save-btn" onclick="saveSavingsAccount()">Save account</button>
+    <button class="delete-link hidden" id="deleteSavingsAccountBtn" onclick="deleteSavingsAccount()">Delete account</button>
+  </div>
+
+  <!-- ===== SAVINGS ENTRY SHEET ===== -->
+  <div id="savingsEntrySheet" class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-header">
+      <div class="sheet-title" id="savingsEntryTitle">Add entry</div>
+      <button class="sheet-close" onclick="closeSavingsEntrySheet()">✕</button>
+    </div>
+    <div class="field-group">
+      <label class="field-label">Date</label>
+      <input type="date" class="text-input" id="saeDate">
+    </div>
+    <div class="field-group">
+      <label class="field-label">Balance</label>
+      <input type="number" inputmode="decimal" class="text-input mono" id="saeBalance" placeholder="0.00">
+    </div>
+    <div class="field-group">
+      <label class="field-label">Comment</label>
+      <input class="text-input" id="saeComment" placeholder="Optional note">
+    </div>
+    <button class="save-btn" onclick="saveSavingsEntry()">Save entry</button>
+    <button class="delete-link hidden" id="deleteSavingsEntryBtn" onclick="deleteSavingsEntry()">Delete entry</button>
   </div>
 
 </div>
@@ -972,7 +1101,7 @@ function renderSavingsOverview(){
   listEl.innerHTML = rows.join('') || '<div class="empty-state"><div class="big">💰</div>No savings yet. Add a TFSA entry or savings account.</div>';
 }
 
-document.getElementById('addSavingsAccountCard').onclick = ()=> openSavingsAccountEditSheet(null);
+document.getElementById('addSavingsAccountCard').onclick = ()=> openSavingsAccountSheet(null);
 
 /* ============================================================
    TRANSACTION SHEET
@@ -980,6 +1109,7 @@ document.getElementById('addSavingsAccountCard').onclick = ()=> openSavingsAccou
 let currentAmount = '0';
 let activeCategoryId = null;
 let editingTxnId = null;
+let lastLocation = null;
 
 function openTxnSheet(catId){
   activeCategoryId = catId;
@@ -995,7 +1125,17 @@ function openTxnSheet(catId){
   document.getElementById('txnDate').value = todayISO();
   document.getElementById('txnComment').value = '';
   document.getElementById('deleteTxnBtn').classList.add('hidden');
+  document.getElementById('repeatToggle').classList.remove('on');
+  document.getElementById('excludeToggle').classList.remove('on');
+  document.getElementById('reminderDate').value = '';
+  lastLocation = null;
+  document.getElementById('locBtn').textContent = '📍 Add location';
+  document.getElementById('locBtn').classList.remove('got');
+
   renderPaymentChips(cat.defaultPayment);
+  renderCustomFields(cat);
+  renderTxnHistory(cat.id);
+
   openSheet('txnSheet');
 }
 function closeTxnSheet(){ closeSheet('txnSheet'); }
@@ -1010,9 +1150,70 @@ function renderPaymentChips(selected){
     };
   });
 }
+function setPaymentChip(method){
+  document.querySelectorAll('#paymentChips .chip').forEach(c=> c.classList.toggle('active', c.dataset.pm===method));
+}
 function getSelectedPayment(){
   const active = document.querySelector('#paymentChips .chip.active');
   return active ? active.dataset.pm : 'None';
+}
+
+function renderCustomFields(cat){
+  const wrap = document.getElementById('customFieldsWrap');
+  wrap.innerHTML = '';
+  (cat.fields||['','']).forEach((label,i)=>{
+    if(!label) return;
+    wrap.innerHTML += `
+      <div class="field-group">
+        <label class="field-label">${label}</label>
+        <input class="text-input" id="customField_${i}" inputmode="decimal" placeholder="Enter ${label.toLowerCase()}">
+      </div>`;
+  });
+}
+function fillCustomFields(values){
+  if(!values) return;
+  values.forEach((v,i)=>{
+    const el = document.getElementById('customField_'+i);
+    if(el) el.value = v;
+  });
+}
+
+function renderTxnHistory(catId){
+  const list = state.transactions.filter(t=>t.categoryId===catId).sort((a,b)=> b.date.localeCompare(a.date)).slice(0,8);
+  const wrap = document.getElementById('txnHistory');
+  if(list.length===0){ wrap.innerHTML = '<div style="font-size:12.5px;color:var(--text-muted);">No transactions yet.</div>'; return; }
+  wrap.innerHTML = list.map(t=>`
+    <div class="txn-row" data-id="${t.id}" style="display:flex; align-items:center; gap:10px; padding:10px 0; border-bottom:1px solid var(--border);">
+      <div style="flex:1; min-width:0;">
+        <div style="font-size:13.5px; font-weight:500; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${t.comment || '(no comment)'}</div>
+        <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">${t.date} · ${t.paymentMethod}${t.location? ' · 📍':''}${t.repeat?' · ↻ repeat':''}</div>
+      </div>
+      <div class="mono" style="font-size:14.5px; font-weight:600; ${t.excluded?'color:var(--text-faint);text-decoration:line-through;':''}">${fmtMoney(t.amount)}</div>
+    </div>
+  `).join('');
+  wrap.querySelectorAll('.txn-row').forEach(row=>{
+    row.onclick = ()=> loadTxnForEdit(row.dataset.id);
+  });
+}
+
+function loadTxnForEdit(id){
+  const t = state.transactions.find(x=>x.id===id);
+  if(!t) return;
+  editingTxnId = id;
+  const cat = state.categories.find(c=>c.id===t.categoryId);
+  currentAmount = t.amount.toFixed(2);
+  document.getElementById('amtValue').textContent = currentAmount;
+  document.getElementById('txnDate').value = t.date;
+  document.getElementById('txnComment').value = t.comment||'';
+  setPaymentChip(t.paymentMethod);
+  fillCustomFields(t.customValues);
+  document.getElementById('repeatToggle').classList.toggle('on', !!t.repeat);
+  document.getElementById('excludeToggle').classList.toggle('on', !!t.excluded);
+  document.getElementById('reminderDate').value = t.reminderDate || '';
+  document.getElementById('deleteTxnBtn').classList.remove('hidden');
+  lastLocation = t.location || null;
+  document.getElementById('locBtn').textContent = lastLocation ? `📍 ${lastLocation.label}` : '📍 Add location';
+  document.getElementById('locBtn').classList.toggle('got', !!lastLocation);
 }
 
 document.querySelectorAll('#keypad button').forEach(btn=>{
@@ -1030,27 +1231,67 @@ document.querySelectorAll('#keypad button').forEach(btn=>{
   };
 });
 
+function toggleSwitch(id){
+  document.getElementById(id).classList.toggle('on');
+}
+
+function captureLocation(){
+  if(!navigator.geolocation){ alert('Location not supported on this device.'); return; }
+  const btn = document.getElementById('locBtn');
+  btn.textContent = '📍 Locating…';
+  navigator.geolocation.getCurrentPosition(async pos=>{
+    const {latitude, longitude} = pos.coords;
+    let label = `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
+    try{
+      const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=16`);
+      const data = await res.json();
+      if(data && data.display_name) label = data.display_name.split(',').slice(0,2).join(',');
+    }catch(e){}
+    lastLocation = { lat: latitude, lng: longitude, label };
+    btn.textContent = `📍 ${label}`;
+    btn.classList.add('got');
+  }, err=>{
+    btn.textContent = '📍 Add location';
+    alert('Could not get location: ' + err.message);
+  });
+}
+
 function saveTransaction(){
   const cat = state.categories.find(c=>c.id===activeCategoryId);
   const amount = parseFloat(currentAmount || '0');
   if(!amount || amount<=0){ alert('Enter an amount first.'); return; }
 
-  const paymentMethod = getSelectedPayment();
+  const customValues = (cat.fields||['','']).map((label,i)=>{
+    const el = document.getElementById('customField_'+i);
+    return el ? el.value : '';
+  });
+
+  const repeat = document.getElementById('repeatToggle').classList.contains('on');
+  const excluded = document.getElementById('excludeToggle').classList.contains('on');
+  const reminderDate = document.getElementById('reminderDate').value || null;
+
   if(editingTxnId){
     const t = state.transactions.find(x=>x.id===editingTxnId);
     Object.assign(t, {
       amount, date: document.getElementById('txnDate').value,
       comment: document.getElementById('txnComment').value,
-      paymentMethod
+      paymentMethod: getSelectedPayment(),
+      customValues, repeat, excluded, reminderDate,
+      location: lastLocation
     });
   } else {
     state.transactions.push({
-      id: uid(), seriesId: null, categoryId: cat.id,
-      amount, date: document.getElementById('txnDate').value,
+      id: uid(),
+      seriesId: null,
+      categoryId: cat.id,
+      amount,
+      date: document.getElementById('txnDate').value,
       comment: document.getElementById('txnComment').value,
-      paymentMethod, customValues:['',''], location:null,
-      repeat:false, excluded:false, reminderDate:null,
-      createdAt:Date.now()
+      paymentMethod: getSelectedPayment(),
+      customValues,
+      location: lastLocation,
+      repeat, excluded, reminderDate,
+      createdAt: Date.now()
     });
   }
   saveState();
@@ -1231,76 +1472,6 @@ function populatePreviousPayslip(){
 }
 
 /* ============================================================
-   SAVINGS ACCOUNTS (FULL SHEET)
-   ============================================================ */
-let editingSavingsAccountId = null;
-let currentSavingsAccountId = null;
-
-function openSavingsAccountEditSheet(accountId){
-  editingSavingsAccountId = accountId;
-  const acc = accountId ? state.savingsAccounts.find(a=>a.id===accountId) : null;
-  
-  // We'll use a simple prompt for now since this is a simpler flow
-  const name = prompt('Account name:', acc ? acc.name : '');
-  if(name === null) return;
-  if(!name.trim()){ alert('Name is required.'); return; }
-  const touchable = confirm('Is this account accessible in an emergency?');
-  
-  if(editingSavingsAccountId && acc){
-    Object.assign(acc, {name: name.trim(), touchable});
-  } else {
-    state.savingsAccounts.push({ id: uid(), name: name.trim(), touchable, entries: [] });
-  }
-  saveState();
-  if(currentMode==='overview') renderOverview();
-}
-
-function openSavingsAccountDetailSheet(accountId){
-  currentSavingsAccountId = accountId;
-  const acc = state.savingsAccounts.find(a=>a.id===accountId);
-  if(!acc) return;
-  const sorted = acc.entries.slice().sort((a,b)=> a.date.localeCompare(b.date));
-  const latest = sorted.length ? sorted[sorted.length-1] : null;
-  const bal = latest ? latest.balance : 0;
-  
-  const newBal = prompt(`Current balance for ${acc.name}:`, bal || '0');
-  if(newBal === null) return;
-  const date = prompt('Date (YYYY-MM-DD):', todayISO());
-  if(date === null) return;
-  if(!date.trim()){ alert('Date is required.'); return; }
-  
-  acc.entries.push({ id: uid(), date: date.trim(), balance: parseFloat(newBal) || 0, comment: '' });
-  saveState();
-  if(currentMode==='overview') renderOverview();
-}
-
-/* ============================================================
-   TFSA ENTRY (FULL SHEET)
-   ============================================================ */
-function openTfsaEntrySheet(entryId){
-  const date = prompt('Date (YYYY-MM-DD):', todayISO());
-  if(date === null) return;
-  if(!date.trim()){ alert('Date is required.'); return; }
-  
-  const value = prompt('Current TFSA value:', '0');
-  if(value === null) return;
-  const capital = prompt('New capital added this month:', state.settings.tfsaRecurringAmount || '0');
-  if(capital === null) return;
-
-  state.tfsa.push({
-    id: uid(),
-    date: date.trim(),
-    currentValue: parseFloat(value) || 0,
-    capitalAdded: parseFloat(capital) || 0,
-    comment: ''
-  });
-  saveState();
-  if(currentMode==='overview') renderOverview();
-  quickMode = 'spending';
-  document.getElementById('quickModeLabel').innerHTML = `Adding to: <span>Spending</span>`;
-}
-
-/* ============================================================
    CATEGORY EDITOR
    ============================================================ */
 let editingCatId = null;
@@ -1369,6 +1540,152 @@ function deleteCategory(){
   state.categories = state.categories.filter(c=>c.id!==editingCatId);
   saveState();
   closeCatSheet();
+  if(currentMode==='overview') renderOverview();
+}
+
+/* ============================================================
+   TFSA ENTRY SHEET
+   ============================================================ */
+let editingTfsaEntryId = null;
+
+function openTfsaEntrySheet(entryId){
+  editingTfsaEntryId = entryId;
+  const entry = entryId ? state.tfsa.find(e=>e.id===entryId) : null;
+  document.getElementById('tfsaDate').value = entry ? entry.date : todayISO();
+  document.getElementById('tfsaCurrentValue').value = entry ? (entry.currentValue||'') : '';
+  document.getElementById('tfsaCapitalAdded').value = entry ? entry.capitalAdded : (state.settings.tfsaRecurringAmount || '');
+  document.getElementById('tfsaComment').value = entry ? (entry.comment||'') : '';
+  document.getElementById('deleteTfsaEntryBtn').classList.toggle('hidden', !entry);
+  openSheet('tfsaEntrySheet');
+}
+function closeTfsaEntrySheet(){ closeSheet('tfsaEntrySheet'); }
+
+function saveTfsaEntry(){
+  const date = document.getElementById('tfsaDate').value || todayISO();
+  const currentValue = parseFloat(document.getElementById('tfsaCurrentValue').value) || 0;
+  if(!currentValue){ alert('Enter the current value.'); return; }
+  const entry = {
+    date, currentValue,
+    capitalAdded: parseFloat(document.getElementById('tfsaCapitalAdded').value) || 0,
+    comment: document.getElementById('tfsaComment').value.trim()
+  };
+  if(editingTfsaEntryId){
+    Object.assign(state.tfsa.find(e=>e.id===editingTfsaEntryId), entry);
+  } else {
+    state.tfsa.push(Object.assign({ id: uid() }, entry));
+  }
+  saveState();
+  closeTfsaEntrySheet();
+  if(currentMode==='overview') renderOverview();
+  quickMode = 'spending';
+  document.getElementById('quickModeLabel').innerHTML = `Adding to: <span>Spending</span>`;
+}
+function deleteTfsaEntry(){
+  if(!editingTfsaEntryId) return;
+  if(!confirm('Delete this TFSA entry?')) return;
+  state.tfsa = state.tfsa.filter(e=>e.id!==editingTfsaEntryId);
+  saveState();
+  closeTfsaEntrySheet();
+  if(currentMode==='overview') renderOverview();
+}
+
+/* ============================================================
+   SAVINGS ACCOUNT SHEET
+   ============================================================ */
+let editingSavingsAccountId = null;
+let currentSavingsAccountId = null;
+
+function openSavingsAccountSheet(accountId){
+  editingSavingsAccountId = accountId;
+  const acc = accountId ? state.savingsAccounts.find(a=>a.id===accountId) : null;
+  document.getElementById('savingsAccountTitle').textContent = acc ? 'Edit account' : 'New savings account';
+  document.getElementById('saAccountName').value = acc ? acc.name : '';
+  document.getElementById('saTouchableToggle').classList.toggle('on', acc ? acc.touchable : true);
+  document.getElementById('deleteSavingsAccountBtn').classList.toggle('hidden', !acc);
+  openSheet('savingsAccountSheet');
+}
+function closeSavingsAccountSheet(){ closeSheet('savingsAccountSheet'); }
+
+function saveSavingsAccount(){
+  const name = document.getElementById('saAccountName').value.trim();
+  if(!name){ alert('Give the account a name.'); return; }
+  const touchable = document.getElementById('saTouchableToggle').classList.contains('on');
+  if(editingSavingsAccountId){
+    const acc = state.savingsAccounts.find(a=>a.id===editingSavingsAccountId);
+    Object.assign(acc, {name, touchable});
+  } else {
+    state.savingsAccounts.push({ id: uid(), name, touchable, entries: [] });
+  }
+  saveState();
+  closeSavingsAccountSheet();
+  if(currentMode==='overview') renderOverview();
+}
+function deleteSavingsAccount(){
+  if(!editingSavingsAccountId) return;
+  if(!confirm('Delete this savings account and all its entries?')) return;
+  state.savingsAccounts = state.savingsAccounts.filter(a=>a.id!==editingSavingsAccountId);
+  saveState();
+  closeSavingsAccountSheet();
+  if(currentMode==='overview') renderOverview();
+}
+
+/* ============================================================
+   SAVINGS ACCOUNT DETAIL / ENTRY
+   ============================================================ */
+function openSavingsAccountDetailSheet(accountId){
+  currentSavingsAccountId = accountId;
+  const acc = state.savingsAccounts.find(a=>a.id===accountId);
+  if(!acc) return;
+  const sorted = acc.entries.slice().sort((a,b)=> a.date.localeCompare(b.date));
+  const latest = sorted.length ? sorted[sorted.length-1] : null;
+  
+  // Quick entry for now - open the entry sheet
+  openSavingsEntrySheet(null, acc);
+}
+
+function openSavingsEntrySheet(entryId, account){
+  const acc = account || state.savingsAccounts.find(a=>a.id===currentSavingsAccountId);
+  if(!acc) return;
+  const entry = entryId ? acc.entries.find(e=>e.id===entryId) : null;
+  document.getElementById('savingsEntryTitle').textContent = entry ? 'Edit entry' : `Add entry to ${acc.name}`;
+  document.getElementById('saeDate').value = entry ? entry.date : todayISO();
+  document.getElementById('saeBalance').value = entry ? entry.balance : '';
+  document.getElementById('saeComment').value = entry ? (entry.comment||'') : '';
+  document.getElementById('deleteSavingsEntryBtn').classList.toggle('hidden', !entry);
+  openSheet('savingsEntrySheet');
+}
+function closeSavingsEntrySheet(){ closeSheet('savingsEntrySheet'); }
+
+function saveSavingsEntry(){
+  const acc = state.savingsAccounts.find(a=>a.id===currentSavingsAccountId);
+  if(!acc) return;
+  const date = document.getElementById('saeDate').value || todayISO();
+  const balance = parseFloat(document.getElementById('saeBalance').value) || 0;
+  if(!balance){ alert('Enter the balance.'); return; }
+  const comment = document.getElementById('saeComment').value.trim();
+  
+  // Find if editing
+  const entryId = document.getElementById('deleteSavingsEntryBtn').classList.contains('hidden') ? null : 
+    (acc.entries.find(e => e.id === editingSavingsEntryId)?.id);
+  
+  if(entryId){
+    Object.assign(acc.entries.find(e=>e.id===entryId), {date, balance, comment});
+  } else {
+    acc.entries.push({ id: uid(), date, balance, comment });
+  }
+  saveState();
+  closeSavingsEntrySheet();
+  if(currentMode==='overview') renderOverview();
+}
+function deleteSavingsEntry(){
+  const acc = state.savingsAccounts.find(a=>a.id===currentSavingsAccountId);
+  if(!acc) return;
+  const entryId = acc.entries.find(e => e.id === editingSavingsEntryId)?.id;
+  if(!entryId) return;
+  if(!confirm('Delete this entry?')) return;
+  acc.entries = acc.entries.filter(e=>e.id!==entryId);
+  saveState();
+  closeSavingsEntrySheet();
   if(currentMode==='overview') renderOverview();
 }
 
