@@ -39,14 +39,13 @@
   #topbar { display:flex; align-items:center; justify-content:space-between; padding:calc(env(safe-area-inset-top,0px)+18px) 16px 8px; gap:8px; }
   #topbar .nav-btn { background:none; border:none; color:var(--text-muted); font-size:22px; width:40px; height:40px; border-radius:50%; display:flex; align-items:center; justify-content:center; cursor:pointer; }
   #topbar .nav-btn:active { background:var(--surface-2); }
-  #topbar .nav-btn.hidden { display:none; }
   #monthLabel { font-size:19px; font-weight:700; letter-spacing:-0.2px; }
   #monthSub { font-size:12px; color:var(--text-muted); text-align:center; margin-top:-2px; }
   #monthWrap { display:flex; flex-direction:column; align-items:center; flex:1; }
 
   /* ===== MODE SELECTOR ===== */
   #modeSelector {
-    display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px;
+    display:grid; grid-template-columns:1fr 1fr; gap:8px;
     padding:4px 16px 12px;
   }
   #modeSelector .mode-btn {
@@ -155,7 +154,6 @@
   .picker-cat-item {
     display:flex; align-items:center; gap:12px; padding:12px 14px; background:var(--surface-2);
     border:1px solid var(--border); border-radius:var(--radius-sm); cursor:pointer;
-    transition:background 0.1s;
   }
   .picker-cat-item:active { background:var(--surface-3); transform:scale(0.98); }
   .picker-cat-item .icon { font-size:20px; width:36px; text-align:center; flex-shrink:0; }
@@ -298,9 +296,18 @@
   .choice-title { display:block; font-size:14.5px; font-weight:700; color:var(--text); }
   .choice-sub { display:block; font-size:12px; color:var(--text-muted); margin-top:2px; }
 
-  /* ===== SETTINGS ===== */
-  #settingsPanel { padding:4px 16px 16px; display:none; flex-direction:column; gap:10px; }
-  #settingsPanel .save-btn { margin-top:0; }
+  /* ===== SETTINGS SHEET ===== */
+  #settingsSheet .field-group { margin-bottom:12px; }
+  #settingsSheet .save-btn { margin-top:0; }
+  .data-row { display:flex; gap:10px; margin-top:12px; }
+  .data-row .save-btn { flex:1; background:var(--surface-2); color:var(--text); }
+
+  /* ===== ICON INPUT ROW ===== */
+  .icon-input-row { display:flex; gap:10px; align-items:center; }
+  .icon-preview { width:48px; height:48px; border-radius:14px; display:flex; align-items:center; justify-content:center; font-size:22px; flex-shrink:0; background:var(--surface-2); }
+  .swatch-row { display:flex; flex-wrap:wrap; gap:10px; }
+  .swatch { width:32px; height:32px; border-radius:50%; border:2px solid transparent; cursor:pointer; }
+  .swatch.active { border-color:var(--text); }
 
   /* ===== SCROLLING ===== */
   ::-webkit-scrollbar { display:none; }
@@ -336,10 +343,6 @@
     <button class="mode-btn" data-mode="overview">
       <span class="icon">📊</span>
       Overview
-    </button>
-    <button class="mode-btn" data-mode="settings">
-      <span class="icon">⚙</span>
-      Settings
     </button>
   </div>
 
@@ -389,33 +392,8 @@
     </div>
   </div>
 
-  <!-- ===== SETTINGS ===== -->
-  <div id="settingsPanel">
-    <div class="field-group">
-      <label class="field-label">Currency symbol</label>
-      <input class="text-input" id="currencyInput" placeholder="R" value="R">
-    </div>
-    <div class="field-group">
-      <label class="field-label">Default provident fund %</label>
-      <input type="number" class="text-input" id="pfDefaultPctInput" placeholder="7.5">
-    </div>
-    <div class="two-col">
-      <div class="field-group">
-        <label class="field-label">TFSA annual threshold</label>
-        <input type="number" class="text-input" id="tfsaThresholdInput" placeholder="48000">
-      </div>
-      <div class="field-group">
-        <label class="field-label">TFSA lifetime threshold</label>
-        <input type="number" class="text-input" id="tfsaLifetimeThresholdInput" placeholder="500000">
-      </div>
-    </div>
-    <button class="save-btn" onclick="saveSettings()">Save Settings</button>
-    <div style="display:flex; gap:10px; margin-top:14px;">
-      <button class="save-btn" style="flex:1; background:var(--surface-2); color:var(--text);" onclick="exportData()">⬇ Export</button>
-      <button class="save-btn" style="flex:1; background:var(--surface-2); color:var(--text);" onclick="document.getElementById('importFile').click()">⬆ Import</button>
-    </div>
-    <input type="file" id="importFile" accept="application/json" class="hidden">
-  </div>
+  <!-- ===== OVERLAY ===== -->
+  <div id="overlay"></div>
 
   <!-- ===== QUICK CATEGORY PICKER ===== -->
   <div id="quickCatPicker">
@@ -432,7 +410,6 @@
   </div>
 
   <!-- ===== TRANSACTION SHEET ===== -->
-  <div id="overlay" class="overlay"></div>
   <div id="txnSheet" class="sheet">
     <div class="sheet-handle"></div>
     <div class="sheet-header">
@@ -605,15 +582,15 @@
     </div>
     <div class="field-group">
       <label class="field-label">Icon &amp; name</label>
-      <div class="icon-input-row" style="display:flex; gap:10px; align-items:center;">
-        <div class="icon-preview" id="catIconPreview" style="width:48px; height:48px; border-radius:14px; display:flex; align-items:center; justify-content:center; font-size:22px; flex-shrink:0; background:var(--surface-2);">🛒</div>
+      <div class="icon-input-row">
+        <div class="icon-preview" id="catIconPreview" style="background:var(--surface-2);">🛒</div>
         <input class="text-input" id="catIconInput" style="width:70px; text-align:center;" maxlength="4" placeholder="emoji">
         <input class="text-input" id="catNameInput" style="flex:1;" placeholder="Category name">
       </div>
     </div>
     <div class="field-group">
       <label class="field-label">Color</label>
-      <div class="swatch-row" id="colorSwatches" style="display:flex; flex-wrap:wrap; gap:10px;"></div>
+      <div class="swatch-row" id="colorSwatches"></div>
     </div>
     <div class="field-group">
       <label class="field-label">Monthly budget (optional)</label>
@@ -633,6 +610,39 @@
     </div>
     <button class="save-btn" onclick="saveCategory()">Save category</button>
     <button class="delete-link hidden" id="deleteCatBtn" onclick="deleteCategory()">Delete category</button>
+  </div>
+
+  <!-- ===== SETTINGS SHEET ===== -->
+  <div id="settingsSheet" class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-header">
+      <div class="sheet-title">⚙ Settings</div>
+      <button class="sheet-close" onclick="closeSettingsSheet()">✕</button>
+    </div>
+    <div class="field-group">
+      <label class="field-label">Currency symbol</label>
+      <input class="text-input" id="currencyInput" placeholder="R" value="R">
+    </div>
+    <div class="field-group">
+      <label class="field-label">Default provident fund %</label>
+      <input type="number" class="text-input" id="pfDefaultPctInput" placeholder="7.5">
+    </div>
+    <div class="two-col">
+      <div class="field-group">
+        <label class="field-label">TFSA annual threshold</label>
+        <input type="number" class="text-input" id="tfsaThresholdInput" placeholder="48000">
+      </div>
+      <div class="field-group">
+        <label class="field-label">TFSA lifetime threshold</label>
+        <input type="number" class="text-input" id="tfsaLifetimeThresholdInput" placeholder="500000">
+      </div>
+    </div>
+    <button class="save-btn" onclick="saveSettings()">Save Settings</button>
+    <div class="data-row">
+      <button class="save-btn" onclick="exportData()">⬇ Export</button>
+      <button class="save-btn" onclick="document.getElementById('importFile').click()">⬆ Import</button>
+    </div>
+    <input type="file" id="importFile" accept="application/json" class="hidden">
   </div>
 
 </div>
@@ -664,7 +674,7 @@ function loadState(){
     if(raw) return JSON.parse(raw);
   }catch(e){}
   return {
-    settings: { currency:'R', providentFundDefaultPct:null, tfsaAnnualThreshold:48000, tfsaLifetimeThreshold:500000, tfsaTouchable:true },
+    settings: { currency:'R', providentFundDefaultPct:null, tfsaAnnualThreshold:48000, tfsaLifetimeThreshold:500000, tfsaTouchable:true, tfsaRecurringAmount:500 },
     categories: [
       { id: uid(), name:'Groceries', icon:'🛒', color:'#4FD1AE', budget:3000, defaultPayment:'Cash', fields:['',''] },
       { id: uid(), name:'Petrol', icon:'⛽', color:'#F2A65A', budget:1500, defaultPayment:'Credit Card', fields:['Mileage','Litres'] },
@@ -685,6 +695,7 @@ function migrateState(){
   if(!state.savingsAccounts) state.savingsAccounts = [];
   if(!state.settings) state.settings = { currency:'R' };
   if(!state.settings.tfsaTouchable) state.settings.tfsaTouchable = true;
+  if(!state.settings.tfsaRecurringAmount) state.settings.tfsaRecurringAmount = 500;
 }
 function saveState(){
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
@@ -703,10 +714,8 @@ document.querySelectorAll('#modeSelector .mode-btn').forEach(btn=>{
     currentMode = btn.dataset.mode;
     document.getElementById('quickAdd').style.display = currentMode==='quick' ? 'flex' : 'none';
     document.getElementById('overview').style.display = currentMode==='overview' ? 'block' : 'none';
-    document.getElementById('settingsPanel').style.display = currentMode==='settings' ? 'flex' : 'none';
     document.getElementById('monthSub').textContent = currentMode==='quick' ? 'Tap + to add' : 'Tap a category to capture spending';
     if(currentMode==='overview') renderOverview();
-    if(currentMode==='settings') loadSettings();
   };
 });
 
@@ -750,10 +759,8 @@ function openCategoryPicker(){
     `).join('');
   }
 
-  // Fix: Use event delegation or proper click binding
   list.querySelectorAll('.picker-cat-item').forEach(el=>{
-    el.onclick = function(e){
-      e.stopPropagation();
+    el.onclick = function(){
       const catId = this.dataset.cat;
       closePicker();
       const cat = state.categories.find(c=>c.id===catId);
@@ -770,13 +777,12 @@ function closePicker(){
   document.getElementById('quickCatPicker').classList.remove('show');
 }
 
-// Close picker on overlay tap
 document.getElementById('quickCatPicker').onclick = (e)=>{
   if(e.target === e.currentTarget) closePicker();
 };
 
 /* ============================================================
-   MONTH NAVIGATION (Overview)
+   MONTH NAVIGATION
    ============================================================ */
 let viewDate = new Date();
 viewDate.setDate(1);
@@ -915,13 +921,11 @@ function renderSavingsOverview(){
   const totalsCard = document.getElementById('savingsTotalsCard');
   const listEl = document.getElementById('savingsAccountsList');
 
-  // TFSA
   const tfsaSorted = state.tfsa.slice().sort((a,b)=> a.date.localeCompare(b.date));
   const latestTfsa = tfsaSorted.length ? tfsaSorted[tfsaSorted.length-1] : null;
   const tfsaBalance = latestTfsa ? (latestTfsa.currentValue||0) : 0;
   const tfsaTouchable = state.settings.tfsaTouchable !== false;
 
-  // Custom accounts
   let customTouchable = 0, customLocked = 0;
   state.savingsAccounts.forEach(acc=>{
     const sorted = acc.entries.slice().sort((a,b)=> a.date.localeCompare(b.date));
@@ -1052,8 +1056,8 @@ function saveTransaction(){
   saveState();
   closeTxnSheet();
   if(currentMode==='overview') renderOverview();
-  document.getElementById('quickModeLabel').innerHTML = `Adding to: <span>Spending</span>`;
   quickMode = 'spending';
+  document.getElementById('quickModeLabel').innerHTML = `Adding to: <span>Spending</span>`;
 }
 
 function deleteTransaction(){
@@ -1203,9 +1207,6 @@ function savePayslip(){
   document.getElementById('quickModeLabel').innerHTML = `Adding to: <span>Spending</span>`;
 }
 
-/* ============================================================
-   POPULATE PREVIOUS PAYSLIP
-   ============================================================ */
 function populatePreviousPayslip(){
   const payslips = state.income.filter(i=>i.type==='payslip').sort((a,b)=> b.date.localeCompare(a.date));
   if(payslips.length === 0){
@@ -1222,7 +1223,6 @@ function populatePreviousPayslip(){
   document.getElementById('psExtraComment').value = prev.extraComment || '';
   document.getElementById('psComment').value = prev.comment || '';
 
-  // Set date to next month
   const d = new Date(prev.date);
   d.setMonth(d.getMonth() + 1);
   document.getElementById('psDate').value = d.toISOString().slice(0,10);
@@ -1231,7 +1231,7 @@ function populatePreviousPayslip(){
 }
 
 /* ============================================================
-   SAVINGS ACCOUNTS
+   SAVINGS ACCOUNTS (FULL SHEET)
    ============================================================ */
 let editingSavingsAccountId = null;
 let currentSavingsAccountId = null;
@@ -1239,6 +1239,8 @@ let currentSavingsAccountId = null;
 function openSavingsAccountEditSheet(accountId){
   editingSavingsAccountId = accountId;
   const acc = accountId ? state.savingsAccounts.find(a=>a.id===accountId) : null;
+  
+  // We'll use a simple prompt for now since this is a simpler flow
   const name = prompt('Account name:', acc ? acc.name : '');
   if(name === null) return;
   if(!name.trim()){ alert('Name is required.'); return; }
@@ -1273,7 +1275,7 @@ function openSavingsAccountDetailSheet(accountId){
 }
 
 /* ============================================================
-   TFSA ENTRY
+   TFSA ENTRY (FULL SHEET)
    ============================================================ */
 function openTfsaEntrySheet(entryId){
   const date = prompt('Date (YYYY-MM-DD):', todayISO());
@@ -1330,7 +1332,7 @@ function updateIconPreview(){
 }
 function renderColorSwatches(){
   const wrap = document.getElementById('colorSwatches');
-  wrap.innerHTML = COLOR_PALETTE.map(c=>`<button type="button" class="swatch ${c===selectedColor?'active':''}" data-c="${c}" style="width:32px; height:32px; border-radius:50%; border:2px solid ${c===selectedColor?'var(--text)':'transparent'}; background:${c}; cursor:pointer;"></button>`).join('');
+  wrap.innerHTML = COLOR_PALETTE.map(c=>`<button type="button" class="swatch ${c===selectedColor?'active':''}" data-c="${c}" style="background:${c};"></button>`).join('');
   wrap.querySelectorAll('.swatch').forEach(sw=>{
     sw.onclick = ()=>{ selectedColor = sw.dataset.c; wrap.querySelectorAll('.swatch').forEach(s=>s.classList.remove('active')); sw.classList.add('active'); };
   });
@@ -1371,13 +1373,18 @@ function deleteCategory(){
 }
 
 /* ============================================================
-   SETTINGS
+   SETTINGS SHEET
    ============================================================ */
-function loadSettings(){
+document.getElementById('settingsBtn').onclick = ()=>{
   document.getElementById('currencyInput').value = state.settings.currency || 'R';
   document.getElementById('pfDefaultPctInput').value = state.settings.providentFundDefaultPct || '';
   document.getElementById('tfsaThresholdInput').value = state.settings.tfsaAnnualThreshold || 48000;
   document.getElementById('tfsaLifetimeThresholdInput').value = state.settings.tfsaLifetimeThreshold || 500000;
+  openSheet('settingsSheet');
+};
+
+function closeSettingsSheet(){
+  closeSheet('settingsSheet');
 }
 
 function saveSettings(){
@@ -1387,6 +1394,7 @@ function saveSettings(){
   state.settings.tfsaLifetimeThreshold = parseFloat(document.getElementById('tfsaLifetimeThresholdInput').value) || 500000;
   saveState();
   alert('Settings saved!');
+  closeSettingsSheet();
 }
 
 /* ============================================================
@@ -1435,19 +1443,6 @@ function closeSheet(id){
 document.getElementById('overlay').onclick = ()=>{
   document.querySelectorAll('.sheet.open').forEach(s=>s.classList.remove('open'));
   document.getElementById('overlay').classList.remove('show');
-};
-
-/* ============================================================
-   SETTINGS BUTTON
-   ============================================================ */
-document.getElementById('settingsBtn').onclick = ()=>{
-  document.querySelectorAll('#modeSelector .mode-btn').forEach(b=>b.classList.remove('active'));
-  document.querySelector('[data-mode="settings"]').classList.add('active');
-  currentMode = 'settings';
-  document.getElementById('quickAdd').style.display = 'none';
-  document.getElementById('overview').style.display = 'none';
-  document.getElementById('settingsPanel').style.display = 'flex';
-  loadSettings();
 };
 
 /* ============================================================
