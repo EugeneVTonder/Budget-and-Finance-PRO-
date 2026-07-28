@@ -30,8 +30,9 @@
     --radius-sm: 10px;
     font-size: 16px;
   }
-  *{ box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-  html,body{ height:100%; margin:0; }
+  *{ box-sizing: border-box; -webkit-tap-highlight-color: transparent; max-width:100%; }
+  html,body{ height:100%; margin:0; overflow-x:hidden; }
+  svg, img{ max-width:100%; height:auto; }
   body{
     background: var(--bg);
     color: var(--text);
@@ -72,13 +73,13 @@
 
   /* ===== MODE SELECTOR ===== */
   #modeSelector {
-    display:grid; grid-template-columns:1fr 1fr; gap:8px;
+    display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px;
     padding:4px 16px 12px;
   }
   #modeSelector .mode-btn {
     background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-sm);
-    padding:12px 8px; text-align:center; color:var(--text-muted); font-family:'Sora';
-    font-size:12px; font-weight:600; cursor:pointer;
+    padding:12px 6px; text-align:center; color:var(--text-muted); font-family:'Sora';
+    font-size:11.5px; font-weight:600; cursor:pointer; min-width:0;
   }
   #modeSelector .mode-btn:active { transform:scale(0.97); }
   #modeSelector .mode-btn .icon { font-size:24px; display:block; margin-bottom:4px; }
@@ -374,6 +375,12 @@
   .cat-card .cat-budget-row{ font-size:11px; color:var(--text-muted); display:flex; justify-content:space-between; margin-top:4px; }
   .cat-progress-track{ height:5px; border-radius:3px; background:var(--surface-3); overflow:hidden; margin-top:6px; }
   .cat-progress-fill{ height:100%; border-radius:3px; }
+  .cat-drag-handle{
+    color:var(--text-faint); font-size:18px; cursor:grab; touch-action:none;
+    padding:4px 2px; flex-shrink:0; user-select:none;
+  }
+  .cat-card.dragging{ opacity:0.55; box-shadow:0 6px 20px rgba(0,0,0,0.35); z-index:5; }
+  .cat-card.drag-placeholder{ background:var(--surface-2); border:1.5px dashed var(--accent); }
   .cat-edit-btn{
     background:var(--surface-2); border:1px solid var(--border); color:var(--text-muted);
     width:30px; height:30px; border-radius:50%; font-size:13px; flex-shrink:0;
@@ -451,6 +458,7 @@
     padding: 8px 13px; border-radius: 20px; font-size:13px; font-weight:600;
   }
   .chip.active{ background: var(--accent); color:#08221B; border-color:var(--accent); }
+  .chip-icon{ margin-right:5px; }
   .two-col{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
   .toggle-row{ display:flex; align-items:center; justify-content:space-between; padding:11px 0; border-bottom:1px solid var(--border); }
   .toggle-row:last-child{ border-bottom:none; }
@@ -487,9 +495,30 @@
   .swatch.active{ border-color: var(--text); }
   .icon-input-row{ display:flex; gap:10px; align-items:center; }
   .icon-preview{ width:48px; height:48px; border-radius:14px; display:flex; align-items:center; justify-content:center; font-size:22px; flex-shrink:0; }
+  .icon-grid{ display:grid; grid-template-columns: repeat(6, 1fr); gap:8px; margin-top:10px; }
+  .icon-grid button{
+    background:var(--surface-2); border:1px solid var(--border); border-radius:var(--radius-sm);
+    font-size:19px; padding:8px 0; cursor:pointer;
+  }
+  .icon-grid button.active{ border-color:var(--accent); background:var(--surface-3); }
+  .icon-grid button:active{ transform:scale(0.92); }
 
   .empty-state{ text-align:center; padding: 60px 20px; color:var(--text-muted); grid-column: 1/-1; }
   .empty-state .big{ font-size:34px; margin-bottom:10px; }
+
+  .settings-section{ background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); margin:14px 0; overflow:hidden; }
+  .settings-section-header{ display:flex; align-items:center; justify-content:space-between; padding:14px 16px; }
+  .settings-section-title{ font-size:14.5px; font-weight:700; }
+  .settings-section-body{ padding:0 16px 14px; }
+  .settings-section-body.section-off{ display:none; }
+
+  .learning-card{
+    background:var(--surface); border:1px solid var(--border); border-radius:var(--radius);
+    padding:12px 14px; margin-bottom:10px; display:flex; gap:10px; align-items:flex-start;
+  }
+  .learning-card .learning-icon{ font-size:18px; flex-shrink:0; }
+  .learning-card .learning-text{ font-size:13px; line-height:1.45; color:var(--text); }
+  .learning-card .learning-text b{ color:var(--accent); }
 
   ::-webkit-scrollbar{ display:none; }
 </style>
@@ -515,7 +544,11 @@
     </button>
     <button class="mode-btn" data-mode="overview">
       <span class="icon">📊</span>
-      Overview
+      Breakdown
+    </button>
+    <button class="mode-btn" data-mode="analysis">
+      <span class="icon">📈</span>
+      Analysis
     </button>
   </div>
 
@@ -571,9 +604,6 @@
     <div id="dueBanner" class="hidden"></div>
 
     <main id="categoryGrid"></main>
-    <div id="importExpensesRow" style="padding: 0 16px 16px;">
-      <button class="loc-btn" onclick="openBulkImportSheet('transactions')">📥 Import expense history from spreadsheet</button>
-    </div>
 
     <main id="incomeSection" class="hidden">
       <div id="ytdCard" class="hidden"></div>
@@ -637,7 +667,6 @@
         <div id="tfsaHistoricPanel" class="hidden">
           <button id="addTfsaCardHistoric">+ Add entry</button>
           <div id="tfsaList"></div>
-          <button class="loc-btn" style="margin-top:10px;" onclick="openBulkImportSheet('tfsa')">📥 Import history from spreadsheet</button>
         </div>
       </div>
 
@@ -650,6 +679,29 @@
     <input type="file" id="importFile" accept="application/json" class="hidden">
 
   </div><!-- end overview -->
+
+  <!-- ===== ANALYSIS ===== -->
+  <div id="analysisPanel" style="display:none; padding: 4px 16px 16px;">
+    <div class="range-select-row">
+      <label class="field-label" style="margin:0;">Range</label>
+      <select class="text-input" id="analysisRangeSelect">
+        <option value="3">Last 3 months</option>
+        <option value="6" selected>Last 6 months</option>
+        <option value="12">Last 12 months</option>
+        <option value="24">Last 24 months</option>
+      </select>
+    </div>
+
+    <div id="analysisLearnings"></div>
+
+    <div class="trend-card">
+      <div class="trend-title"><span>Spending by category</span><span class="trend-latest" id="analysisSpendTotal"></span></div>
+      <div id="analysisDonutWrap"></div>
+    </div>
+
+    <div id="analysisSpendBarWrap"></div>
+    <div id="analysisIncomeSpendWrap"></div>
+  </div>
 
 </div>
 
@@ -668,10 +720,6 @@
   <button class="choice-btn" onclick="openPayslipSheet(null)">
     <span class="choice-icon">📄</span>
     <span><span class="choice-title">Add payslip</span><span class="choice-sub">Full breakdown including provident fund</span></span>
-  </button>
-  <button class="choice-btn" onclick="openBulkImportSheet()">
-    <span class="choice-icon">📥</span>
-    <span><span class="choice-title">Import payslip history</span><span class="choice-sub">Paste or upload rows from your spreadsheet, once</span></span>
   </button>
 </div>
 
@@ -882,7 +930,6 @@
   <div id="pfTrendChartWrap"></div>
   <div id="pfManageList"></div>
   <button class="save-btn" onclick="openPFEntrySheet(null)">+ Add entry</button>
-  <button class="loc-btn" style="margin-top:10px;" onclick="openBulkImportSheet('pf')">📥 Import history from spreadsheet</button>
 </div>
 
 <!-- ============ PROVIDENT FUND ENTRY SHEET ============ -->
@@ -1102,6 +1149,7 @@
       <input class="text-input" id="catIconInput" style="width:70px; text-align:center;" maxlength="4" placeholder="emoji">
       <input class="text-input" id="catNameInput" style="flex:1;" placeholder="Category name">
     </div>
+    <div class="icon-grid" id="catIconGrid"></div>
   </div>
 
   <div class="field-group">
@@ -1146,16 +1194,11 @@
     <button class="sheet-close" onclick="closeSettingsSheet()">✕</button>
   </div>
 
+  <div class="section-label">General</div>
   <div class="field-group">
     <label class="field-label">Currency symbol</label>
     <input class="text-input" id="currencyInput" placeholder="R">
   </div>
-
-  <div class="field-group">
-    <label class="field-label">Default provident fund contribution %</label>
-    <input type="number" inputmode="decimal" class="text-input" id="pfDefaultPctInput" placeholder="7.5">
-  </div>
-
   <div class="field-group">
     <label class="field-label">Tax year starts</label>
     <select class="text-input" id="taxYearStartInput">
@@ -1173,31 +1216,80 @@
       <option value="12">December</option>
     </select>
   </div>
-
   <div class="field-group">
-    <label class="field-label">TFSA annual contribution threshold</label>
-    <input type="number" inputmode="decimal" class="text-input" id="tfsaThresholdInput" placeholder="48000">
+    <button class="loc-btn" id="notifBtn" onclick="requestNotifPermission()">🔔 Enable capture reminders</button>
   </div>
 
-  <div class="field-group">
-    <label class="field-label">TFSA lifetime contribution threshold</label>
-    <input type="number" inputmode="decimal" class="text-input" id="tfsaLifetimeThresholdInput" placeholder="500000">
-  </div>
-
-  <div class="field-group">
-    <label class="field-label">TFSA recurring monthly contribution</label>
-    <input type="number" inputmode="decimal" class="text-input" id="tfsaRecurringInput" placeholder="500">
-  </div>
-
-  <div class="field-group" style="background:var(--surface-2); border-radius:var(--radius-sm); padding:4px 12px;">
-    <div class="toggle-row">
-      <div><div class="toggle-label">TFSA accessible in an emergency</div><div class="toggle-sub">Used for the Savings tab liquidity totals</div></div>
-      <button class="switch on" id="tfsaTouchableToggle" onclick="toggleSwitch('tfsaTouchableToggle')"></button>
+  <!-- ===== PROVIDENT FUND SECTION ===== -->
+  <div class="settings-section">
+    <div class="settings-section-header">
+      <span class="settings-section-title">🏦 Provident Fund</span>
+      <button class="switch on" id="sectionToggle_pf" onclick="toggleSettingsSection('pf')"></button>
+    </div>
+    <div class="settings-section-body" id="sectionBody_pf">
+      <div class="field-group">
+        <label class="field-label">Default provident fund contribution %</label>
+        <input type="number" inputmode="decimal" class="text-input" id="pfDefaultPctInput" placeholder="7.5">
+      </div>
     </div>
   </div>
 
+  <!-- ===== TFSA SECTION ===== -->
+  <div class="settings-section">
+    <div class="settings-section-header">
+      <span class="settings-section-title">📈 TFSA</span>
+      <button class="switch on" id="sectionToggle_tfsa" onclick="toggleSettingsSection('tfsa')"></button>
+    </div>
+    <div class="settings-section-body" id="sectionBody_tfsa">
+      <div class="field-group">
+        <label class="field-label">TFSA annual contribution threshold</label>
+        <input type="number" inputmode="decimal" class="text-input" id="tfsaThresholdInput" placeholder="48000">
+      </div>
+      <div class="field-group">
+        <label class="field-label">TFSA lifetime contribution threshold</label>
+        <input type="number" inputmode="decimal" class="text-input" id="tfsaLifetimeThresholdInput" placeholder="500000">
+      </div>
+      <div class="field-group">
+        <label class="field-label">TFSA recurring monthly contribution</label>
+        <input type="number" inputmode="decimal" class="text-input" id="tfsaRecurringInput" placeholder="500">
+      </div>
+      <div class="field-group" style="background:var(--surface-2); border-radius:var(--radius-sm); padding:4px 12px;">
+        <div class="toggle-row">
+          <div><div class="toggle-label">TFSA accessible in an emergency</div><div class="toggle-sub">Used for the Savings tab liquidity totals</div></div>
+          <button class="switch on" id="tfsaTouchableToggle" onclick="toggleSwitch('tfsaTouchableToggle')"></button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== SAVINGS ACCOUNTS SECTION ===== -->
+  <div class="settings-section">
+    <div class="settings-section-header">
+      <span class="settings-section-title">💰 Savings Accounts</span>
+      <button class="switch on" id="sectionToggle_savingsAccounts" onclick="toggleSettingsSection('savingsAccounts')"></button>
+    </div>
+    <div class="settings-section-body" id="sectionBody_savingsAccounts">
+      <div style="font-size:12.5px; color:var(--text-muted); line-height:1.5;">
+        Track extra savings or investment accounts alongside your provident fund and TFSA.
+      </div>
+    </div>
+  </div>
+
+  <div class="section-label">Data Import</div>
+  <div style="font-size:12.5px; color:var(--text-muted); line-height:1.5; margin-bottom:10px;">
+    Bring in history from a spreadsheet — a once-off action per data type.
+  </div>
   <div class="field-group">
-    <button class="loc-btn" id="notifBtn" onclick="requestNotifPermission()">🔔 Enable capture reminders</button>
+    <button class="loc-btn" onclick="openBulkImportSheet('transactions')">📥 Import expense history</button>
+  </div>
+  <div class="field-group" id="importRow_payslip">
+    <button class="loc-btn" onclick="openBulkImportSheet('payslip')">📥 Import income / payslip history</button>
+  </div>
+  <div class="field-group" id="importRow_tfsa">
+    <button class="loc-btn" onclick="openBulkImportSheet('tfsa')">📥 Import TFSA history</button>
+  </div>
+  <div class="field-group" id="importRow_pf">
+    <button class="loc-btn" onclick="openBulkImportSheet('pf')">📥 Import provident fund history</button>
   </div>
 
   <div class="section-label">Backup</div>
@@ -1221,6 +1313,9 @@
    ============================================================ */
 const STORAGE_KEY = 'ledgerAppData_v1';
 const PAYMENT_METHODS = ['None','Cash','Credit Card','EFT','Debit Order','Savings'];
+const PAYMENT_METHOD_ICONS = { 'None':'⚪', 'Cash':'💵', 'Credit Card':'💳', 'EFT':'🏦', 'Debit Order':'📄', 'Savings':'🐖' };
+function pmIcon(m){ return PAYMENT_METHOD_ICONS[m] || '⚪'; }
+const ICON_PRESETS = ['🛒','💳','💵','🏦','⛽','🍔','☕','🏠','📱','🎬','✈️','🎓','💊','👕','🎁','🚗','🐾','🏋️','🍿','🧾','🎮','🐖','📶','💡'];
 const COLOR_PALETTE = ['#4FD1AE','#F2A65A','#E8636B','#6C8CF5','#C98BF0','#4FC7F2','#F2D24F','#8CE07A','#F28CC0','#B7BDCF'];
 
 function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,8); }
@@ -1242,7 +1337,7 @@ function loadState(){
     if(raw) return JSON.parse(raw);
   }catch(e){ console.error('Load failed', e); }
   return {
-    settings: { currency: 'R', providentFundDefaultPct: null, taxYearStartMonth: 3, tfsaAnnualThreshold: 48000, tfsaLifetimeThreshold: 500000, tfsaRecurringAmount: 500, tfsaTouchable: true },
+    settings: { currency: 'R', providentFundDefaultPct: null, taxYearStartMonth: 3, tfsaAnnualThreshold: 48000, tfsaLifetimeThreshold: 500000, tfsaRecurringAmount: 500, tfsaTouchable: true, sectionsEnabled: { pf:true, tfsa:true, savingsAccounts:true } },
     categories: [
       { id: uid(), name:'Groceries', icon:'🛒', color:'#4FD1AE', budget:3000, defaultPayment:'Cash', fields:['',''] },
       { id: uid(), name:'Petrol', icon:'⛽', color:'#F2A65A', budget:1500, defaultPayment:'Credit Card', fields:['Mileage','Litres'] },
@@ -1268,6 +1363,10 @@ function migrateState(){
   if(!state.settings.tfsaLifetimeThreshold) state.settings.tfsaLifetimeThreshold = 500000;
   if(!state.settings.tfsaRecurringAmount) state.settings.tfsaRecurringAmount = 500;
   if(state.settings.tfsaTouchable === undefined) state.settings.tfsaTouchable = true;
+  if(!state.settings.sectionsEnabled) state.settings.sectionsEnabled = { pf:true, tfsa:true, savingsAccounts:true };
+  if(state.settings.sectionsEnabled.pf === undefined) state.settings.sectionsEnabled.pf = true;
+  if(state.settings.sectionsEnabled.tfsa === undefined) state.settings.sectionsEnabled.tfsa = true;
+  if(state.settings.sectionsEnabled.savingsAccounts === undefined) state.settings.sectionsEnabled.savingsAccounts = true;
 }
 function saveState(){
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
@@ -1286,8 +1385,11 @@ document.querySelectorAll('.mode-btn').forEach(btn=>{
     currentMode = this.dataset.mode;
     document.getElementById('quickAdd').style.display = currentMode==='quick' ? 'flex' : 'none';
     document.getElementById('overview').style.display = currentMode==='overview' ? 'block' : 'none';
+    document.getElementById('analysisPanel').style.display = currentMode==='analysis' ? 'block' : 'none';
     document.getElementById('monthSub').textContent = currentMode==='quick' ? 'Tap + to add' : 'Tap a category to capture spending';
+    updateTopbarChrome();
     if(currentMode==='overview') render();
+    if(currentMode==='analysis') renderAnalysis();
   };
 });
 
@@ -1308,6 +1410,10 @@ document.getElementById('bigPlusBtn').onclick = function(){
   } else if(quickMode === 'income'){
     openIncomeChoiceSheet();
   } else if(quickMode === 'savings'){
+    if(state.settings.sectionsEnabled?.tfsa === false){
+      alert('TFSA is turned off in Settings. Enable it there to add an entry.');
+      return;
+    }
     openTfsaEntrySheet(null);
   }
 };
@@ -1367,21 +1473,24 @@ document.getElementById('nextMonth').onclick = ()=>{
 };
 
 let currentView = 'spending';
+function updateTopbarChrome(){
+  const hideChrome = (currentMode!=='overview') || (currentView==='tfsa' || currentView==='income');
+  document.getElementById('prevMonth').classList.toggle('hidden', hideChrome);
+  document.getElementById('nextMonth').classList.toggle('hidden', hideChrome);
+  document.getElementById('monthWrap').classList.toggle('hidden', hideChrome);
+}
 document.querySelectorAll('#viewTabs .tab-btn').forEach(btn=>{
   btn.onclick = ()=>{
     currentView = btn.dataset.view;
     document.querySelectorAll('#viewTabs .tab-btn').forEach(b=>b.classList.toggle('active', b===btn));
     document.getElementById('categoryGrid').classList.toggle('hidden', currentView!=='spending');
-    document.getElementById('importExpensesRow').classList.toggle('hidden', currentView!=='spending');
     document.getElementById('incomeSection').classList.toggle('hidden', currentView!=='income');
     document.getElementById('tfsaSection').classList.toggle('hidden', currentView!=='tfsa');
 
     const hideChrome = (currentView==='tfsa' || currentView==='income');
-    document.getElementById('prevMonth').classList.toggle('hidden', hideChrome);
-    document.getElementById('nextMonth').classList.toggle('hidden', hideChrome);
-    document.getElementById('monthWrap').classList.toggle('hidden', hideChrome);
     document.getElementById('summaryBar').classList.toggle('hidden', hideChrome);
     document.getElementById('dueBanner').classList.toggle('hidden', currentView!=='spending');
+    updateTopbarChrome();
   };
 });
 
@@ -1390,13 +1499,10 @@ document.querySelectorAll('#viewTabs .tab-btn').forEach(btn=>{
    ============================================================ */
 function render(){
   // Show correct view based on mode
-  if(currentMode === 'overview'){
-    document.getElementById('quickAdd').style.display = 'none';
-    document.getElementById('overview').style.display = 'block';
-  } else {
-    document.getElementById('quickAdd').style.display = 'flex';
-    document.getElementById('overview').style.display = 'none';
-  }
+  document.getElementById('quickAdd').style.display = currentMode==='quick' ? 'flex' : 'none';
+  document.getElementById('overview').style.display = currentMode==='overview' ? 'block' : 'none';
+  document.getElementById('analysisPanel').style.display = currentMode==='analysis' ? 'block' : 'none';
+  updateTopbarChrome();
 
   const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
   document.getElementById('monthLabel').textContent = monthNames[viewDate.getMonth()] + ' ' + viewDate.getFullYear();
@@ -1427,7 +1533,9 @@ function render(){
     const amtColor = over ? 'var(--danger)' : (warning ? 'var(--warn)' : 'var(--text)');
     const barColor = over ? 'var(--danger)' : (warning ? 'var(--warn)' : cat.color);
 
+    card.dataset.catId = cat.id;
     card.innerHTML = `
+      <span class="cat-drag-handle" title="Drag to reorder">⠿</span>
       <div class="cat-main">
         <div class="cat-icon-wrap" style="background:${cat.color}22; color:${cat.color};">${cat.icon}</div>
         <div class="cat-info">
@@ -1447,6 +1555,7 @@ function render(){
     card.querySelector('.cat-edit-btn').onclick = (e)=>{ e.stopPropagation(); openCatSheet(cat.id); };
     grid.appendChild(card);
   });
+  wireCategoryDrag(grid);
 
   const addCard = document.createElement('div');
   addCard.id = 'addCategoryCard';
@@ -1474,6 +1583,181 @@ function render(){
   renderPFSummaryCard();
   renderSavingsOverview();
   renderSavingsAccountsPanel();
+}
+
+/* ============================================================
+   ANALYSIS TAB
+   ============================================================ */
+document.getElementById('analysisRangeSelect').onchange = renderAnalysis;
+
+function analysisMonthKeys(months){
+  const keys = [];
+  const d = new Date(); d.setDate(1);
+  for(let i=months-1; i>=0; i--){
+    const k = new Date(d.getFullYear(), d.getMonth()-i, 1);
+    keys.push(monthKey(k));
+  }
+  return keys;
+}
+
+function renderAnalysis(){
+  const months = parseInt(document.getElementById('analysisRangeSelect').value) || 6;
+  const keys = analysisMonthKeys(months);
+  const keySet = new Set(keys);
+
+  const rangeTxns = state.transactions.filter(t=> !t.excluded && keySet.has((t.date||'').slice(0,7)));
+  const rangeIncome = state.income.filter(i=> !i.excluded && keySet.has((i.date||'').slice(0,7)));
+
+  // Category breakdown (donut) across the whole range
+  const byCat = {};
+  rangeTxns.forEach(t=>{ byCat[t.categoryId] = (byCat[t.categoryId]||0) + t.amount; });
+  const segments = state.categories
+    .map(cat=> ({ label: `${cat.icon} ${cat.name}`, value: byCat[cat.id]||0, color: cat.color }))
+    .filter(s=> s.value > 0)
+    .sort((a,b)=> b.value - a.value);
+  const totalSpentRange = segments.reduce((s,x)=> s+x.value, 0);
+  document.getElementById('analysisSpendTotal').textContent = fmtMoney(totalSpentRange);
+  document.getElementById('analysisDonutWrap').innerHTML = segments.length
+    ? buildDonutChart(segments)
+    : '<div class="empty-state" style="padding:20px;"><div class="big">🗂️</div>No spending captured in this range.</div>';
+
+  // Monthly spend bar chart
+  const monthNamesShort = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const spendByMonth = keys.map(k=>{
+    const total = state.transactions.filter(t=> !t.excluded && (t.date||'').slice(0,7)===k).reduce((s,t)=>s+t.amount,0);
+    return { value: total, label: monthNamesShort[parseInt(k.slice(5,7),10)-1] };
+  });
+  document.getElementById('analysisSpendBarWrap').innerHTML = `
+    <div class="trend-card">
+      <div class="trend-title"><span>Monthly spend</span><span class="trend-latest">${fmtMoney(spendByMonth[spendByMonth.length-1]?.value||0)}</span></div>
+      ${buildBarChartSVG(spendByMonth, '#E8636B')}
+    </div>
+  `;
+
+  // Income vs spend line charts
+  const incomeByMonth = keys.map(k=>{
+    const total = state.income.filter(i=> !i.excluded && (i.date||'').slice(0,7)===k).reduce((s,i)=>s+i.amount,0);
+    return { value: total, label: monthNamesShort[parseInt(k.slice(5,7),10)-1] };
+  });
+  document.getElementById('analysisIncomeSpendWrap').innerHTML = `
+    <div class="trend-card">
+      <div class="trend-title"><span>Income trend</span><span class="trend-latest">${fmtMoney(incomeByMonth[incomeByMonth.length-1]?.value||0)}</span></div>
+      ${buildLineChartSVG(incomeByMonth, '#4FD1AE')}
+    </div>
+    <div class="trend-card">
+      <div class="trend-title"><span>Spend trend</span><span class="trend-latest">${fmtMoney(spendByMonth[spendByMonth.length-1]?.value||0)}</span></div>
+      ${buildLineChartSVG(spendByMonth, '#E8636B')}
+    </div>
+  `;
+  wireChartTapReveal(document.getElementById('analysisIncomeSpendWrap'));
+  wireChartTapReveal(document.getElementById('analysisSpendBarWrap'));
+
+  renderAnalysisLearnings(segments, spendByMonth, incomeByMonth);
+}
+
+function renderAnalysisLearnings(segments, spendByMonth, incomeByMonth){
+  const wrap = document.getElementById('analysisLearnings');
+  const cards = [];
+
+  if(segments.length){
+    const top = segments[0];
+    const totalSpentRange = segments.reduce((s,x)=> s+x.value, 0);
+    const pct = totalSpentRange ? Math.round(top.value/totalSpentRange*100) : 0;
+    cards.push({ icon:'🏆', text:`Your biggest spending category is <b>${top.label}</b>, making up <b>${pct}%</b> of what you've spent in this range.` });
+  }
+
+  const monthsOverBudget = spendByMonth.filter((m,i)=>{
+    const totalBudget = state.categories.reduce((s,c)=> s+(c.budget||0), 0);
+    return totalBudget>0 && m.value > totalBudget;
+  }).length;
+  if(monthsOverBudget>0){
+    cards.push({ icon:'⚠️', text:`You went over your total budget in <b>${monthsOverBudget}</b> of the last ${spendByMonth.length} months.` });
+  }
+
+  const avgSpend = spendByMonth.reduce((s,m)=>s+m.value,0) / (spendByMonth.length||1);
+  const avgIncome = incomeByMonth.reduce((s,m)=>s+m.value,0) / (incomeByMonth.length||1);
+  if(avgIncome>0){
+    const savingsRate = Math.round(((avgIncome-avgSpend)/avgIncome)*100);
+    cards.push({ icon: savingsRate>=0 ? '💰' : '📉', text: savingsRate>=0
+      ? `On average you're saving about <b>${savingsRate}%</b> of your income each month.`
+      : `On average you're spending about <b>${Math.abs(savingsRate)}%</b> more than you earn each month.` });
+  }
+
+  if(spendByMonth.length>=2){
+    const last = spendByMonth[spendByMonth.length-1].value;
+    const prev = spendByMonth[spendByMonth.length-2].value;
+    if(prev>0){
+      const diffPct = Math.round(((last-prev)/prev)*100);
+      if(Math.abs(diffPct)>=5){
+        cards.push({ icon: diffPct>0?'📈':'📉', text:`Spending ${diffPct>0?'rose':'dropped'} <b>${Math.abs(diffPct)}%</b> last month compared to the month before.` });
+      }
+    }
+  }
+
+  wrap.innerHTML = cards.length
+    ? cards.map(c=>`<div class="learning-card"><span class="learning-icon">${c.icon}</span><span class="learning-text">${c.text}</span></div>`).join('')
+    : '<div class="empty-state" style="padding:20px;"><div class="big">📊</div>Capture a bit more data to see insights here.</div>';
+}
+
+
+function wireCategoryDrag(grid){
+  let dragEl = null, startY = 0, startTop = 0, dragging = false;
+
+  grid.querySelectorAll('.cat-drag-handle').forEach(handle=>{
+    handle.onpointerdown = (e)=>{
+      const card = handle.closest('.cat-card');
+      if(!card) return;
+      e.preventDefault();
+      dragEl = card;
+      dragging = true;
+      startY = e.clientY;
+      startTop = card.getBoundingClientRect().top;
+      card.classList.add('dragging');
+      handle.setPointerCapture(e.pointerId);
+
+      const onMove = (ev)=>{
+        if(!dragging) return;
+        const dy = ev.clientY - startY;
+        dragEl.style.transform = `translateY(${dy}px)`;
+        dragEl.style.position = 'relative';
+        dragEl.style.zIndex = '5';
+
+        const siblings = [...grid.querySelectorAll('.cat-card')].filter(c=>c!==dragEl);
+        const dragCurrentMid = dragEl.getBoundingClientRect().top + dy + dragEl.offsetHeight/2;
+        for(const sib of siblings){
+          const rect = sib.getBoundingClientRect();
+          const sibMid = rect.top + rect.height/2;
+          if(dragCurrentMid < sibMid && dragEl.nextElementSibling === sib){
+            grid.insertBefore(dragEl, sib);
+            dragEl.style.transform = 'none'; dragEl.style.position='static';
+            startY = ev.clientY; startTop = dragEl.getBoundingClientRect().top;
+            break;
+          } else if(dragCurrentMid > sibMid && sib.nextElementSibling === dragEl){
+            grid.insertBefore(sib, dragEl);
+            dragEl.style.transform = 'none'; dragEl.style.position='static';
+            startY = ev.clientY; startTop = dragEl.getBoundingClientRect().top;
+            break;
+          }
+        }
+      };
+      const onUp = (ev)=>{
+        dragging = false;
+        dragEl.classList.remove('dragging');
+        dragEl.style.transform = ''; dragEl.style.position=''; dragEl.style.zIndex='';
+        handle.releasePointerCapture(ev.pointerId);
+        document.removeEventListener('pointermove', onMove);
+        document.removeEventListener('pointerup', onUp);
+
+        // Persist new order (ignore the "add category" card, it has no data-cat-id)
+        const newOrder = [...grid.querySelectorAll('.cat-card[data-cat-id]')].map(c=>c.dataset.catId);
+        state.categories.sort((a,b)=> newOrder.indexOf(a.id) - newOrder.indexOf(b.id));
+        saveState();
+        dragEl = null;
+      };
+      document.addEventListener('pointermove', onMove);
+      document.addEventListener('pointerup', onUp);
+    };
+  });
 }
 
 /* ============================================================
@@ -2065,27 +2349,32 @@ function customSavingsAccountSorted(account){
 function renderSavingsOverview(){
   const totalsCard = document.getElementById('savingsTotalsCard');
   const listEl = document.getElementById('savingsAccountsList');
+  const pfOn = state.settings.sectionsEnabled?.pf !== false;
+  const tfsaOn = state.settings.sectionsEnabled?.tfsa !== false;
+  const accountsOn = state.settings.sectionsEnabled?.savingsAccounts !== false;
 
   // Provident fund
-  const pfSortedList = pfSorted();
+  const pfSortedList = pfOn ? pfSorted() : [];
   const latestPf = pfSortedList.length ? pfSortedList[pfSortedList.length-1] : null;
   const pfBalance = latestPf ? (latestPf.balance||0) : 0;
   const pfTouchable = latestPf ? (latestPf.savingsComp||0) : 0;
   const pfLocked = pfBalance - pfTouchable;
 
   // TFSA
-  const tfsaSortedList = tfsaSorted();
+  const tfsaSortedList = tfsaOn ? tfsaSorted() : [];
   const latestTfsa = tfsaSortedList.length ? tfsaSortedList[tfsaSortedList.length-1] : null;
   const tfsaBalance = latestTfsa ? (latestTfsa.currentValue||0) : 0;
   const tfsaTouchable = state.settings.tfsaTouchable !== false;
 
   // Custom accounts
   let customTouchable = 0, customLocked = 0;
-  state.savingsAccounts.forEach(acc=>{
-    const latest = customSavingsAccountLatest(acc);
-    const bal = latest ? (latest.balance||0) : 0;
-    if(acc.touchable) customTouchable += bal; else customLocked += bal;
-  });
+  if(accountsOn){
+    state.savingsAccounts.forEach(acc=>{
+      const latest = customSavingsAccountLatest(acc);
+      const bal = latest ? (latest.balance||0) : 0;
+      if(acc.touchable) customTouchable += bal; else customLocked += bal;
+    });
+  }
 
   const totalTouchable = pfTouchable + (tfsaTouchable ? tfsaBalance : 0) + customTouchable;
   const totalLocked = pfLocked + (tfsaTouchable ? 0 : tfsaBalance) + customLocked;
@@ -2096,7 +2385,7 @@ function renderSavingsOverview(){
   `;
 
   const rows = [];
-  rows.push(`
+  if(pfOn) rows.push(`
     <div class="savings-account-row" data-nav="pf">
       <div class="sa-icon">🏦</div>
       <div class="sa-info">
@@ -2106,7 +2395,7 @@ function renderSavingsOverview(){
       <div class="sa-balance mono">${fmtMoney(pfBalance)}</div>
     </div>
   `);
-  rows.push(`
+  if(tfsaOn) rows.push(`
     <div class="savings-account-row" data-nav="tfsa">
       <div class="sa-icon">📈</div>
       <div class="sa-info">
@@ -2116,7 +2405,7 @@ function renderSavingsOverview(){
       <div class="sa-balance mono">${fmtMoney(tfsaBalance)}</div>
     </div>
   `);
-  state.savingsAccounts.forEach(acc=>{
+  if(accountsOn) state.savingsAccounts.forEach(acc=>{
     const latest = customSavingsAccountLatest(acc);
     rows.push(`
       <div class="savings-account-row" data-nav="account" data-account-id="${acc.id}">
@@ -2129,7 +2418,7 @@ function renderSavingsOverview(){
       </div>
     `);
   });
-  listEl.innerHTML = rows.join('');
+  listEl.innerHTML = rows.join('') || '<div class="empty-state" style="padding:24px 12px;"><div class="big">🐖</div>No savings sections enabled. Turn one on in Settings.</div>';
   listEl.querySelectorAll('.savings-account-row').forEach(row=>{
     row.onclick = ()=>{
       const nav = row.dataset.nav;
@@ -2138,6 +2427,18 @@ function renderSavingsOverview(){
       else if(nav==='account') openSavingsAccountDetailSheet(row.dataset.accountId);
     };
   });
+
+  // Hide/show sub-tabs for disabled sections
+  const pfTabBtn = document.querySelector('#savingsSubTabs [data-savingsview="pf"]');
+  const tfsaTabBtn = document.querySelector('#savingsSubTabs [data-savingsview="tfsa"]');
+  const accountsTabBtn = document.querySelector('#savingsSubTabs [data-savingsview="accounts"]');
+  if(pfTabBtn) pfTabBtn.classList.toggle('hidden', !pfOn);
+  if(tfsaTabBtn) tfsaTabBtn.classList.toggle('hidden', !tfsaOn);
+  if(accountsTabBtn) accountsTabBtn.classList.toggle('hidden', !accountsOn);
+  const activeSavingsTab = document.querySelector('#savingsSubTabs .sub-tab-btn.active');
+  if(activeSavingsTab && activeSavingsTab.classList.contains('hidden')){
+    switchSavingsView('overview');
+  }
 }
 
 /* ---- Custom savings accounts ---- */
@@ -3128,7 +3429,7 @@ function closeTxnSheet(){
 
 function renderPaymentChips(selected){
   const wrap = document.getElementById('paymentChips');
-  wrap.innerHTML = PAYMENT_METHODS.map(m=>`<button type="button" class="chip ${m===selected?'active':''}" data-pm="${m}">${m}</button>`).join('');
+  wrap.innerHTML = PAYMENT_METHODS.map(m=>`<button type="button" class="chip ${m===selected?'active':''}" data-pm="${m}"><span class="chip-icon">${pmIcon(m)}</span>${m}</button>`).join('');
   wrap.querySelectorAll('.chip').forEach(chip=>{
     chip.onclick = ()=>{
       wrap.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));
@@ -3172,7 +3473,7 @@ function renderTxnHistory(catId){
     <div class="txn-row" data-id="${t.id}">
       <div class="txn-info">
         <div class="txn-comment">${t.comment || '(no comment)'}</div>
-        <div class="txn-meta">${t.date} · ${t.paymentMethod}${t.location? ' · 📍':''}${t.repeat?' · ↻ repeat':''}</div>
+        <div class="txn-meta">${t.date} · ${pmIcon(t.paymentMethod)} ${t.paymentMethod}${t.location? ' · 📍':''}${t.repeat?' · ↻ repeat':''}</div>
       </div>
       <div class="txn-amt mono ${t.excluded?'excluded':''}">${fmtMoney(t.amount)}</div>
     </div>
@@ -3314,6 +3615,7 @@ function openCatSheet(catId){
   document.getElementById('catField2').value = cat && cat.fields ? cat.fields[1] : '';
   selectedColor = cat ? cat.color : COLOR_PALETTE[0];
   updateIconPreview();
+  renderIconGrid();
   renderColorSwatches();
   renderCatPaymentChips(cat ? cat.defaultPayment : 'None');
   document.getElementById('deleteCatBtn').classList.toggle('hidden', !cat);
@@ -3325,9 +3627,22 @@ function closeCatSheet(){
   document.getElementById('overlayCat').classList.add('hidden');
   document.getElementById('catSheet').classList.add('hidden');
 }
-document.getElementById('catIconInput').addEventListener('input', updateIconPreview);
+document.getElementById('catIconInput').addEventListener('input', ()=>{ updateIconPreview(); renderIconGrid(); });
 function updateIconPreview(){
   document.getElementById('catIconPreview').textContent = document.getElementById('catIconInput').value || '🛒';
+}
+function renderIconGrid(){
+  const current = document.getElementById('catIconInput').value.trim();
+  const grid = document.getElementById('catIconGrid');
+  grid.innerHTML = ICON_PRESETS.map(ic=>`<button type="button" class="${ic===current?'active':''}" data-ic="${ic}">${ic}</button>`).join('');
+  grid.querySelectorAll('button').forEach(btn=>{
+    btn.onclick = ()=>{
+      document.getElementById('catIconInput').value = btn.dataset.ic;
+      updateIconPreview();
+      grid.querySelectorAll('button').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+    };
+  });
 }
 function renderColorSwatches(){
   const wrap = document.getElementById('colorSwatches');
@@ -3338,7 +3653,7 @@ function renderColorSwatches(){
 }
 function renderCatPaymentChips(selected){
   const wrap = document.getElementById('catPaymentChips');
-  wrap.innerHTML = PAYMENT_METHODS.map(m=>`<button type="button" class="chip ${m===selected?'active':''}" data-pm="${m}">${m}</button>`).join('');
+  wrap.innerHTML = PAYMENT_METHODS.map(m=>`<button type="button" class="chip ${m===selected?'active':''}" data-pm="${m}"><span class="chip-icon">${pmIcon(m)}</span>${m}</button>`).join('');
   wrap.querySelectorAll('.chip').forEach(chip=>{
     chip.onclick = ()=>{ wrap.querySelectorAll('.chip').forEach(c=>c.classList.remove('active')); chip.classList.add('active'); };
   });
@@ -3383,9 +3698,26 @@ document.getElementById('settingsBtn').onclick = ()=>{
   document.getElementById('tfsaLifetimeThresholdInput').value = state.settings.tfsaLifetimeThreshold || 500000;
   document.getElementById('tfsaRecurringInput').value = state.settings.tfsaRecurringAmount || '';
   document.getElementById('tfsaTouchableToggle').classList.toggle('on', state.settings.tfsaTouchable !== false);
+
+  ['pf','tfsa','savingsAccounts'].forEach(key=>{
+    const enabled = state.settings.sectionsEnabled?.[key] !== false;
+    document.getElementById('sectionToggle_'+key).classList.toggle('on', enabled);
+    document.getElementById('sectionBody_'+key).classList.toggle('section-off', !enabled);
+  });
+  document.getElementById('importRow_tfsa').classList.toggle('hidden', state.settings.sectionsEnabled?.tfsa === false);
+  document.getElementById('importRow_pf').classList.toggle('hidden', state.settings.sectionsEnabled?.pf === false);
+
   document.getElementById('overlaySettings').classList.remove('hidden');
   document.getElementById('settingsSheet').classList.remove('hidden');
 };
+function toggleSettingsSection(key){
+  const toggle = document.getElementById('sectionToggle_'+key);
+  toggle.classList.toggle('on');
+  const enabled = toggle.classList.contains('on');
+  document.getElementById('sectionBody_'+key).classList.toggle('section-off', !enabled);
+  if(key==='tfsa') document.getElementById('importRow_tfsa').classList.toggle('hidden', !enabled);
+  if(key==='pf') document.getElementById('importRow_pf').classList.toggle('hidden', !enabled);
+}
 function closeSettingsSheet(){
   state.settings.currency = document.getElementById('currencyInput').value.trim() || 'R';
   state.settings.providentFundDefaultPct = parseFloat(document.getElementById('pfDefaultPctInput').value) || null;
@@ -3394,6 +3726,11 @@ function closeSettingsSheet(){
   state.settings.tfsaLifetimeThreshold = parseFloat(document.getElementById('tfsaLifetimeThresholdInput').value) || 500000;
   state.settings.tfsaRecurringAmount = parseFloat(document.getElementById('tfsaRecurringInput').value) || 0;
   state.settings.tfsaTouchable = document.getElementById('tfsaTouchableToggle').classList.contains('on');
+  state.settings.sectionsEnabled = {
+    pf: document.getElementById('sectionToggle_pf').classList.contains('on'),
+    tfsa: document.getElementById('sectionToggle_tfsa').classList.contains('on'),
+    savingsAccounts: document.getElementById('sectionToggle_savingsAccounts').classList.contains('on')
+  };
   saveState();
   document.getElementById('overlaySettings').classList.add('hidden');
   document.getElementById('settingsSheet').classList.add('hidden');
